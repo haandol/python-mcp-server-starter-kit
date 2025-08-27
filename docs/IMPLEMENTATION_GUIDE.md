@@ -1,8 +1,18 @@
 # MCP 서버 구현 가이드
 
-이 문서는 Model Context Protocol (MCP) 서버를 Vertical Sliced Architecture로 구현하는 단계별 가이드입니다.
+이 문서는 FastMCP 라이브러리를 사용하여 Model Context Protocol (MCP) 서버를 Vertical Sliced Architecture로 구현하는 단계별 가이드입니다.
 
 개발 과정은 tool_spec.json을 먼저 작성하고, 해당 스펙에 맞춰서 코드를 구현하는 순서로 진행합니다.
+
+## 필수 라이브러리
+
+이 구현 가이드는 다음 핵심 라이브러리들을 기반으로 합니다:
+
+- **FastMCP**: MCP 서버 구현을 위한 핵심 프레임워크
+- **structlog**: 구조화된 로깅을 위한 라이브러리
+- **pytest**: 테스트 프레임워크
+- **pytest-asyncio**: 비동기 테스트 지원
+- **python-dotenv**: 환경 변수 관리
 
 ## 1. 프로젝트 구조
 
@@ -36,6 +46,27 @@ src/
 ```bash
 mkdir your-mcp-server && cd your-mcp-server
 mkdir -p src/{interfaces,tools,resources,di,config,utils}
+```
+
+#### 필수 의존성 설치
+
+`pyproject.toml`에 다음 의존성들을 추가합니다:
+
+```toml
+[project]
+dependencies = [
+    "fastmcp>=0.1.0",
+    "structlog>=23.1.0",
+    "python-dotenv>=1.0.0",
+    # 기타 프로젝트별 의존성들...
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    # 기타 개발 의존성들...
+]
 ```
 
 ### Step 2: Tool Specification 작성
@@ -399,7 +430,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from di.container import DIContainer
@@ -483,7 +514,7 @@ if __name__ == "__main__":
 ### 환경 설정
 
 - [ ] `.env` 파일
-- [ ] `pyproject.toml` 의존성
+- [ ] `pyproject.toml` 의존성 (FastMCP, structlog, pytest, pytest-asyncio, python-dotenv 포함)
 
 ## 4. 새로운 기능 추가 (Tool Spec First)
 
@@ -532,13 +563,22 @@ DIContainer와 server.py에 등록 후 tool_spec.json과 일치성 검증.
 
 ## 5. 서버 실행
 
+FastMCP 기반 서버는 다음과 같이 실행할 수 있습니다:
+
 ```bash
-# 로컬 실행
+# 의존성 설치
+uv add fastmcp structlog python-dotenv
+uv add --dev pytest pytest-asyncio
+
+# 로컬 실행 (STDIO 모드 - 기본)
 cp env/local.env .env
 uv run python src/server.py
 
-# HTTP 모드
+# HTTP 모드로 실행
 MCP_TRANSPORT=streamable-http uv run python src/server.py
+
+# 테스트 실행
+uv run pytest
 ```
 
 ## 관련 문서

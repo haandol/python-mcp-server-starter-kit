@@ -1,5 +1,5 @@
 [project]
-name = "python-kiro-mcp-server-starter-kit"
+name = "python-mcp-server-starter-kit"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
