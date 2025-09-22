@@ -52,6 +52,10 @@ MCP는 AI 모델과 외부 시스템 간의 표준화된 통신 프로토콜입�
 
 ## 🛠️ Kiro / Q CLI로 MCP 서버 개발하기
 
+### 0단계: Context7 설정
+
+[Context7](https://github.com/upstash/context7) 페이지를 방문해서 내가 사용하는 Agentic IDE (Kiro, Q CLI) 에 맞게 context7 mcp 를 설정하기
+
 ### 1단계: Product Requirement Document (PRD) 작성
 
 Q CLI 등 편한 LLM 을 활용하여 요구사항 정리문서를 작성하여 `PRD.md` 에 추가
