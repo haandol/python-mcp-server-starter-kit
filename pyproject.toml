@@ -4,4 +4,24 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "structlog>=25.4.0",
+]
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
+
+[tool.ruff.lint]
+ignore = ["E402"]
+
+[tool.pyright]
+include = ["src"]
+exclude = [
+"**/node_modules",
+"**/__pycache__",
+"src/experimental",
+"src/typestubs",
+".venv",
+".git",
+]
