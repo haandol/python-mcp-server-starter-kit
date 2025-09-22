@@ -492,31 +492,132 @@ if __name__ == "__main__":
 
 효과적인 MCP 도구를 만들기 위한 핵심 원칙들입니다:
 
-#### 1. 적합한 도구 선택
-- [ ] 단순 API 호출만 감싸는 도구는 피한다
+#### 1. 올바른 도구 선택 (Choosing the right tools)
+
+- [ ] 단순 API 엔드포인트를 감싸는 도구는 피한다
 - [ ] 실제 **업무 흐름**을 해결하는 고임팩트 도구 위주로 만든다
-- [ ] 여러 작은 기능 대신 **의미 있는 작업 단위**로 묶는다
+- [ ] 자주 연결되는 작업들을 **하나의 도구 호출**로 통합한다
+- [ ] 컨텍스트 제약을 고려해 **의미 있는 작업 단위**로 설계한다
 
-#### 2. 네임스페이싱 & 구조화
+**예시:**
+
+```python
+# ❌ 나쁜 예: 단순 API 래핑
+def get_all_contacts() -> List[Contact]:
+    """모든 연락처를 반환 (비효율적)"""
+
+# ✅ 좋은 예: 업무 흐름 중심
+def search_contacts(name: str, limit: int = 10) -> List[Contact]:
+    """이름으로 연락처 검색 (효율적)"""
+```
+
+#### 2. 네임스페이싱 & 구조화 (Namespacing)
+
 - [ ] 서비스/리소스 단위로 도구 이름을 구분한다
-- [ ] 접두사/접미사로 유사 기능을 일관되게 표시한다
+- [ ] 공통 접두사/접미사로 관련 도구들을 그룹화한다
 - [ ] 에이전트가 혼란 없이 **올바른 도구를 선택**할 수 있게 한다
+- [ ] 기능이 겹치거나 목적이 불명확한 도구를 피한다
 
-#### 3. 반환값 설계
+**네이밍 예시:**
+
+```python
+# ✅ 좋은 네임스페이싱
+def asana_search_projects(query: str) -> List[Project]:
+def asana_search_users(query: str) -> List[User]:
+def jira_search_issues(query: str) -> List[Issue]:
+
+# 또는
+def search_asana_projects(query: str) -> List[Project]:
+def search_asana_users(query: str) -> List[User]:
+```
+
+#### 3. 의미 있는 맥락 반환 (Returning meaningful context)
+
 - [ ] 후속 행동에 필요한 **맥락 정보**를 포함한다
-- [ ] 단순 ID 대신 사람이 이해할 수 있는 **이름·URL·타입** 등을 제공한다
-- [ ] 상세 응답 vs 간결 응답을 선택할 수 있게 한다
+- [ ] 단순 ID 대신 사람이 이해할 수 있는 **이름·URL·타입** 등을 우선 제공한다
+- [ ] 기술적 식별자가 필요한 경우 `response_format` 옵션 제공한다
+- [ ] 자연어 이름, 이미지 URL, 파일 타입 등 직관적 정보 포함한다
 
-#### 4. 토큰 효율성
-- [ ] 불필요하게 긴 응답을 줄이고, **pagination / 필터링**을 지원한다
+**응답 설계 예시:**
+
+```python
+# ✅ 좋은 응답: 맥락이 풍부함
+{
+    "id": "PRODUCT_123",
+    "name": "Wireless Headphones",  # 사람이 이해하기 쉬운 이름
+    "image_url": "https://...",     # 시각적 맥락
+    "file_type": "product",         # 타입 정보
+    "price": 99.99,
+    "category": "Electronics"
+}
+
+# response_format 옵션 제공
+def search_products(
+    name: str,
+    response_format: str = "detailed"  # "detailed" | "concise"
+) -> MCPResponse:
+```
+
+#### 4. 토큰 효율성 최적화 (Token efficiency)
+
+- [ ] 페이지네이션, 범위 선택, 필터링을 지원한다
 - [ ] 기본값을 문맥 낭비 없이 합리적으로 설정한다
-- [ ] 에러 메시지는 **원인 + 해결책**을 담는다
+- [ ] 에러 메시지는 **구체적이고 실행 가능한 개선사항**을 담는다
+- [ ] 불필요하게 긴 응답을 피한다
 
-#### 5. 명세 & 설명 품질
-- [ ] 도구 설명이 **명확하고 구체적**인가?
-- [ ] 파라미터 이름이 의미를 잘 드러내는가? (예: `user_id`)
-- [ ] 출력 구조가 일관되고 파싱하기 쉬운가? (JSON 등)
-- [ ] 설명 텍스트가 에이전트 문맥에 들어가도 효율적인가?
+**토큰 효율성 예시:**
+
+```python
+def search_products(
+    name: str,
+    limit: int = 10,        # 합리적 기본값
+    offset: int = 0,        # 페이지네이션
+    category: Optional[str] = None  # 필터링
+) -> MCPResponse:
+
+    # ✅ 좋은 에러 메시지: 구체적 + 해결책
+    if len(name) > 100:
+        return MCPResponse.error_response(
+            error="검색어가 너무 깁니다 (최대 100자). 더 짧은 키워드를 사용해주세요."
+        )
+
+    # ❌ 나쁜 에러 메시지: 추상적
+    # return MCPResponse.error_response(error="ValidationError: field too long")
+```
+
+#### 5. 명세 & 설명 품질 (Specification design)
+
+- [ ] 도구 설명이 **새 입사자도 이해할 수 있을 만큼 명확**한가?
+- [ ] 파라미터 이름이 의미를 명확히 드러내는가? (예: `user` → `user_id`)
+- [ ] 출력 구조가 일관되고 파싱하기 쉬운가?
+- [ ] 용어 정의와 기능 설명이 모호함 없이 기술되어 있는가?
+- [ ] 설명 텍스트가 에이전트 컨텍스트에 효율적으로 포함되는가?
+
+**명세 품질 예시:**
+
+```json
+{
+  "name": "search_products",
+  "description": "CAP Retails에서 상품을 검색합니다. 상품명 키워드로 검색하며, 카테고리 필터링을 지원합니다. 영어 키워드만 지원하고 최대 3개 결과를 반환합니다. 검색 결과에는 상품명, 가격, 카테고리, 이미지 URL이 포함됩니다.",
+  "inputSchema": {
+    "properties": {
+      "product_name": {
+        // ✅ 명확한 이름 (name → product_name)
+        "type": "string",
+        "description": "검색할 상품명 키워드 (영어만 지원, 1-100자)",
+        "minLength": 1,
+        "maxLength": 100
+      },
+      "category_filter": {
+        // ✅ 목적이 명확한 이름
+        "type": "string",
+        "description": "상품 카테고리 필터 (선택사항)",
+        "enum": ["ELECTRONICS", "CLOTHING", "BOOKS"]
+      }
+    }
+  }
+}
+```
 
 ## 4. 구현 체크리스트
 
